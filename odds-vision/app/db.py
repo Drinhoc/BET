@@ -84,6 +84,39 @@ def init_db() -> None:
         created_at TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS injuries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_date TEXT NOT NULL,
+        game_id TEXT,
+        team TEXT NOT NULL,
+        player TEXT NOT NULL,
+        status TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        source TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS team_stats_daily (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_date TEXT NOT NULL,
+        team TEXT NOT NULL,
+        pace REAL,
+        ortg REAL,
+        drtg REAL,
+        updated_at TEXT NOT NULL,
+        source TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS game_models (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        report_date TEXT NOT NULL,
+        game_id TEXT NOT NULL,
+        market_fair_total REAL,
+        model_total REAL,
+        blended_total REAL,
+        computed_at TEXT NOT NULL,
+        method TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS bets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         placed_at TEXT NOT NULL,

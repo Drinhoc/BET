@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Odds Vision")
 
 
-templates = Jinja2Templates(directory="odds-vision/app/templates")
+templates = Jinja2Templates(directory="app/templates")
 
 
 @app.on_event("startup")
@@ -36,7 +36,7 @@ async def index(request: Request) -> HTMLResponse:
 
 @app.post("/generate-report")
 async def generate_report_route(report_date: str = Form(...)) -> RedirectResponse:
-    generate_report(report_date)
+    await generate_report(report_date)
     return RedirectResponse(url=f"/report/{report_date}", status_code=303)
 
 
@@ -70,6 +70,23 @@ async def report_view(request: Request, report_date: str) -> HTMLResponse:
             (report_date,),
         ).fetchall()
 
+        game_models = conn.execute(
+            """
+            SELECT * FROM game_models
+            WHERE report_date = ?
+            """,
+            (report_date,),
+        ).fetchall()
+
+        injuries = conn.execute(
+            """
+            SELECT * FROM injuries
+            WHERE report_date = ?
+            ORDER BY updated_at DESC
+            """,
+            (report_date,),
+        ).fetchall()
+
     fair_map: Dict[str, List[Dict[str, str]]] = {}
     for row in fair_prices:
         fair_map.setdefault(row["game_id"], []).append(dict(row))
@@ -77,6 +94,14 @@ async def report_view(request: Request, report_date: str) -> HTMLResponse:
     target_map: Dict[str, List[Dict[str, str]]] = {}
     for row in target_quotes:
         target_map.setdefault(row["game_id"], []).append(dict(row))
+
+    model_map: Dict[str, Dict[str, str]] = {}
+    for row in game_models:
+        model_map[row["game_id"]] = dict(row)
+
+    injuries_map: Dict[str, List[Dict[str, str]]] = {}
+    for row in injuries:
+        injuries_map.setdefault(row["team"].strip().lower(), []).append(dict(row))
 
     ev_map: Dict[str, Dict[float, Dict[str, float]]] = {}
     for game_id, quotes in target_map.items():
@@ -102,6 +127,8 @@ async def report_view(request: Request, report_date: str) -> HTMLResponse:
             "games": games,
             "fair_map": fair_map,
             "target_map": target_map,
+            "model_map": model_map,
+            "injuries_map": injuries_map,
             "ev_map": ev_map,
             "ev_threshold": get_settings().ev_threshold,
         },

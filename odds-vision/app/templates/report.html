@@ -19,6 +19,34 @@
     <section>
       <h2>{{ game.away_team }} @ {{ game.home_team }}</h2>
       <p>Commence: {{ game.commence_time }}</p>
+      {% set model = model_map.get(game.game_id) %}
+      <p>
+        <strong>Market fair total:</strong>
+        {{ model.market_fair_total if model and model.market_fair_total is not none else 'N/A' }}
+        |
+        <strong>Model total:</strong>
+        {{ model.model_total if model and model.model_total is not none else 'N/A' }}
+        |
+        <strong>Blended total:</strong>
+        {{ model.blended_total if model and model.blended_total is not none else 'N/A' }}
+      </p>
+
+      <h4>Injuries</h4>
+      <ul>
+        {% for team in [game.away_team, game.home_team] %}
+          <li>
+            <strong>{{ team }}:</strong>
+            {% set team_injuries = injuries_map.get(team|trim|lower, []) %}
+            {% if team_injuries %}
+              {% for injury in team_injuries[:5] %}
+                {{ injury.player }} ({{ injury.status }}){% if not loop.last %}, {% endif %}
+              {% endfor %}
+            {% else %}
+              Sem registros
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
 
       <table>
         <thead>
@@ -83,7 +111,7 @@
                 {% if ev %}
                   {% set is_good = ev.ev_over >= ev_threshold %}
                   <span class="badge {{ 'good' if is_good else 'neutral' }}">
-                    {{ '%.2f'|format(ev.ev_over * 100) }}%
+                    {% if is_good %}EV+ {% endif %}{{ '%.2f'|format(ev.ev_over * 100) }}%
                   </span>
                 {% else %}
                   -
@@ -93,7 +121,7 @@
                 {% if ev %}
                   {% set is_good = ev.ev_under >= ev_threshold %}
                   <span class="badge {{ 'good' if is_good else 'neutral' }}">
-                    {{ '%.2f'|format(ev.ev_under * 100) }}%
+                    {% if is_good %}EV+ {% endif %}{{ '%.2f'|format(ev.ev_under * 100) }}%
                   </span>
                 {% else %}
                   -

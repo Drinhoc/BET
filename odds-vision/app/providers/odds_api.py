@@ -15,6 +15,10 @@ class OddsAPIProvider(OddsProvider):
         self.api_key = settings.odds_api_key
         self.base_url = settings.odds_api_base_url
         self.sport_key = settings.odds_api_sport_key
+        self.regions = settings.odds_api_regions
+        self.markets = settings.odds_api_markets
+        self.odds_format = settings.odds_api_odds_format
+        self.date_format = settings.odds_api_date_format
 
     async def fetch_odds(self) -> List[Dict[str, Any]]:
         if not self.api_key:
@@ -23,10 +27,10 @@ class OddsAPIProvider(OddsProvider):
         url = f"{self.base_url}/v4/sports/{self.sport_key}/odds"
         params = {
             "apiKey": self.api_key,
-            "regions": "us",
-            "markets": "totals,alternate_totals",
-            "oddsFormat": "decimal",
-            "dateFormat": "iso",
+            "regions": self.regions,
+            "markets": self.markets,
+            "oddsFormat": self.odds_format,
+            "dateFormat": self.date_format,
         }
 
         async with httpx.AsyncClient(timeout=30) as client:
