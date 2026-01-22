@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Relatório {{ report_date }}</title>
+  <style>
+    table { border-collapse: collapse; margin-bottom: 24px; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+    .badge { padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    .badge.good { background: #d1f5d3; color: #0a5b18; }
+    .badge.neutral { background: #f0f0f0; color: #333; }
+  </style>
+</head>
+<body>
+  <h1>Relatório {{ report_date }}</h1>
+  <p><a href="/">Voltar</a></p>
+
+  {% for game in games %}
+    <section>
+      <h2>{{ game.away_team }} @ {{ game.home_team }}</h2>
+      <p>Commence: {{ game.commence_time }}</p>
+      {% set model = model_map.get(game.game_id) %}
+      <p>
+        <strong>Market fair total:</strong>
+        {{ model.market_fair_total if model and model.market_fair_total is not none else 'N/A' }}
+        |
+        <strong>Model total:</strong>
+        {{ model.model_total if model and model.model_total is not none else 'N/A' }}
+        |
+        <strong>Blended total:</strong>
+        {{ model.blended_total if model and model.blended_total is not none else 'N/A' }}
+      </p>
+
+      <h4>Injuries</h4>
+      <ul>
+        {% for team in [game.away_team, game.home_team] %}
+          <li>
+            <strong>{{ team }}:</strong>
+            {% set team_injuries = injuries_map.get(team|trim|lower, []) %}
+            {% if team_injuries %}
+              {% for injury in team_injuries[:5] %}
+                {{ injury.player }} ({{ injury.status }}){% if not loop.last %}, {% endif %}
+              {% endfor %}
+            {% else %}
+              Sem registros
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Total Line</th>
+            <th>Fair Over Odds (Mediana)</th>
+            <th>Fair Under Odds (Mediana)</th>
+            <th>Books</th>
+            <th>Computed</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for line in fair_map.get(game.game_id, []) %}
+            <tr>
+              <td>{{ line.total_line }}</td>
+              <td>{{ '%.3f'|format(line.fair_over_odds) }}</td>
+              <td>{{ '%.3f'|format(line.fair_under_odds) }}</td>
+              <td>{{ line.books_used }}</td>
+              <td>{{ line.computed_at }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Inserir odds alvo (Stake/Betano)</h3>
+      <form method="post" action="/target-quote">
+        <input type="hidden" name="report_date" value="{{ report_date }}" />
+        <input type="hidden" name="game_id" value="{{ game.game_id }}" />
+        <label>Book alvo
+          <select name="book_target">
+            <option value="Stake">Stake</option>
+            <option value="Betano">Betano</option>
+          </select>
+        </label>
+        <label>Total line <input type="number" step="0.5" name="total_line" required /></label>
+        <label>Over odds <input type="number" step="0.01" name="over_odds" required /></label>
+        <label>Under odds <input type="number" step="0.01" name="under_odds" required /></label>
+        <button type="submit">Salvar</button>
+      </form>
+
+      <h3>Odds alvo registradas</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Book</th>
+            <th>Total Line</th>
+            <th>Over</th>
+            <th>Under</th>
+            <th>EV Over</th>
+            <th>EV Under</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for quote in target_map.get(game.game_id, []) %}
+            {% set ev = ev_map.get(game.game_id, {}).get(quote.total_line) %}
+            <tr>
+              <td>{{ quote.book_target }}</td>
+              <td>{{ quote.total_line }}</td>
+              <td>{{ quote.over_odds }}</td>
+              <td>{{ quote.under_odds }}</td>
+              <td>
+                {% if ev %}
+                  {% set is_good = ev.ev_over >= ev_threshold %}
+                  <span class="badge {{ 'good' if is_good else 'neutral' }}">
+                    {% if is_good %}EV+ {% endif %}{{ '%.2f'|format(ev.ev_over * 100) }}%
+                  </span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+              <td>
+                {% if ev %}
+                  {% set is_good = ev.ev_under >= ev_threshold %}
+                  <span class="badge {{ 'good' if is_good else 'neutral' }}">
+                    {% if is_good %}EV+ {% endif %}{{ '%.2f'|format(ev.ev_under * 100) }}%
+                  </span>
+                {% else %}
+                  -
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  {% endfor %}
+</body>
+</html>

@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ app_name }} - Relatório do Dia</title>
+</head>
+<body>
+  <h1>{{ app_name }}</h1>
+  <h2>Gerar relatório do dia</h2>
+  <form method="post" action="/generate-report">
+    <label for="report_date">Data (YYYY-MM-DD)</label>
+    <input id="report_date" name="report_date" type="date" required />
+    <button type="submit">Gerar relatório do dia</button>
+  </form>
+  <p><a href="/bets">Ver bets ledger</a></p>
+</body>
+</html>

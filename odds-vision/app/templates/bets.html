@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bets Ledger</title>
+  <style>
+    table { border-collapse: collapse; margin-bottom: 24px; width: 100%; }
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Bets Ledger</h1>
+  <p><a href="/">Voltar</a></p>
+
+  <section>
+    <h2>Resumo</h2>
+    <ul>
+      <li>Total stake: {{ summary.total_stake }}</li>
+      <li>Lucro total: {{ summary.total_profit }}</li>
+      <li>ROI: {{ '%.2f'|format(summary.roi * 100) }}%</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Registrar aposta</h2>
+    <form method="post" action="/bets">
+      <label>Data/hora <input type="datetime-local" name="placed_at" required /></label>
+      <label>Sport <input type="text" name="sport" value="Basketball" required /></label>
+      <label>League <input type="text" name="league" value="NBA" required /></label>
+      <label>Game ID <input type="text" name="game_id" required /></label>
+      <label>Market <input type="text" name="market" value="totals" required /></label>
+      <label>Side
+        <select name="side">
+          <option value="Over">Over</option>
+          <option value="Under">Under</option>
+        </select>
+      </label>
+      <label>Line <input type="number" step="0.5" name="line" required /></label>
+      <label>Odds <input type="number" step="0.01" name="odds_taken" required /></label>
+      <label>Stake <input type="number" step="0.01" name="stake" required /></label>
+      <label>Book <input type="text" name="book" required /></label>
+      <label>Notas <input type="text" name="notes" /></label>
+      <button type="submit">Salvar</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Lista de apostas</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Placed</th>
+          <th>Game</th>
+          <th>Market</th>
+          <th>Side</th>
+          <th>Line</th>
+          <th>Odds</th>
+          <th>Stake</th>
+          <th>Status</th>
+          <th>Profit</th>
+          <th>Settle</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for bet in bets %}
+          <tr>
+            <td>{{ bet.id }}</td>
+            <td>{{ bet.placed_at }}</td>
+            <td>{{ bet.game_id }}</td>
+            <td>{{ bet.market }}</td>
+            <td>{{ bet.side }}</td>
+            <td>{{ bet.line }}</td>
+            <td>{{ bet.odds_taken }}</td>
+            <td>{{ bet.stake }}</td>
+            <td>{{ bet.status }}</td>
+            <td>{{ bet.profit }}</td>
+            <td>
+              {% if bet.status == 'open' %}
+                <form method="post" action="/bets/{{ bet.id }}/settle">
+                  <select name="status">
+                    <option value="won">won</option>
+                    <option value="lost">lost</option>
+                    <option value="void">void</option>
+                  </select>
+                  <input type="datetime-local" name="settled_at" required />
+                  <button type="submit">Atualizar</button>
+                </form>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+</body>
+</html>
